@@ -51,7 +51,7 @@ uvicorn src.api:app --reload --host 0.0.0.0 --port 8000
 open frontend/index.html
 
 # 6. View MLflow experiments
-mlflow ui
+mlflow ui --backend-store-uri "sqlite:///F:/Portfolio Project/cancer_classification/mlflow.db"
 → http://localhost:5000
 
 # 7. Run tests
