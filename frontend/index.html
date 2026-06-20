@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cancer Type Classifier</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --accent: #238636;
+    --accent-hover: #2ea043;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --danger: #da3633;
+    --warning: #d29922;
+    --lung: #58a6ff;
+    --breast: #f78166;
+    --colon: #7ee787;
+    --prostate: #ffa657;
+    --skin: #d2a8ff;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1.2rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  header h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  header .badge {
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .api-status {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+
+  .dot.online { background: var(--accent); }
+
+  nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 0;
+    padding: 0 2rem;
+  }
+
+  nav button {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.88rem;
+    padding: 0.75rem 1.25rem;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  nav button:hover { color: var(--text); }
+  nav button.active { color: var(--text); border-bottom-color: var(--accent); }
+
+  main { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+  }
+
+  .card h3 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  .field label {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .field input, .field select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .field input:focus, .field select:focus {
+    border-color: var(--accent);
+  }
+
+  .field .hint {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 0.2rem;
+  }
+
+  .btn-predict {
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    padding: 0.7rem 2rem;
+    transition: background 0.15s;
+    width: 100%;
+  }
+
+  .btn-predict:hover { background: var(--accent-hover); }
+  .btn-predict:disabled { background: var(--border); cursor: not-allowed; }
+
+  .result-box {
+    display: none;
+    margin-top: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .result-header {
+    background: #1c2128;
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .result-header .cancer-label {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .result-header .confidence {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .prob-bars { padding: 1.25rem 1.5rem; }
+
+  .prob-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .prob-row .label {
+    width: 80px;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  .prob-bar-bg {
+    flex: 1;
+    background: var(--border);
+    border-radius: 3px;
+    height: 8px;
+    overflow: hidden;
+  }
+
+  .prob-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+
+  .prob-row .pct {
+    width: 45px;
+    text-align: right;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cancer-colors {
+    Lung: var(--lung);
+    Breast: var(--breast);
+    Colon: var(--colon);
+    Prostate: var(--prostate);
+    Skin: var(--skin);
+  }
+
+  .metric-card {
+    text-align: center;
+  }
+
+  .metric-card .value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .metric-card .label {
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 0.25rem;
+  }
+
+  .chart-wrap { position: relative; height: 260px; }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.82rem;
+  }
+
+  th {
+    background: #1c2128;
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    padding: 0.6rem 0.8rem;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  td {
+    border-top: 1px solid var(--border);
+    padding: 0.55rem 0.8rem;
+  }
+
+  tr:hover td { background: #1c2128; }
+
+  .cm-grid {
+    display: grid;
+    gap: 3px;
+  }
+
+  .cm-cell {
+    align-items: center;
+    border-radius: 4px;
+    display: flex;
+    font-size: 0.85rem;
+    font-weight: 600;
+    height: 48px;
+    justify-content: center;
+  }
+
+  .loading {
+    color: var(--muted);
+    font-size: 0.85rem;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Cancer Type Classifier</h1>
+  <span class="badge">ML · SQL Pipeline</span>
+  <div class="api-status">
+    <div class="dot" id="status-dot"></div>
+    <span id="status-text">Connecting…</span>
+  </div>
+</header>
+
+<nav>
+  <button class="active" onclick="showTab('predict', this)">Predict</button>
+  <button onclick="showTab('eda', this)">Exploratory Analysis</button>
+  <button onclick="showTab('model', this)">Model Performance</button>
+  <button onclick="showTab('data', this)">Cleaned Dataset</button>
+</nav>
+
+<main>
+
+  <!-- PREDICT TAB -->
+  <div id="tab-predict" class="tab-content active">
+    <div class="card" style="margin-bottom:1.5rem">
+      <h3>Patient Risk Profile</h3>
+      <div class="form-grid" id="predict-form">
+
+        <div class="field">
+          <label>Age</label>
+          <input type="number" id="age" value="65" min="18" max="110" />
+        </div>
+        <div class="field">
+          <label>Gender</label>
+          <select id="gender">
+            <option value="0">Female</option>
+            <option value="1" selected>Male</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>BMI</label>
+          <input type="number" id="bmi" value="26.5" step="0.1" />
+        </div>
+        <div class="field">
+          <label>Smoking (0–10)</label>
+          <input type="number" id="smoking" value="7" min="0" max="10" />
+          <div class="hint">0 = non-smoker, 10 = heavy</div>
+        </div>
+        <div class="field">
+          <label>Alcohol Use (0–10)</label>
+          <input type="number" id="alcohol_use" value="3" min="0" max="10" />
+        </div>
+        <div class="field">
+          <label>Physical Activity (0–10)</label>
+          <input type="number" id="physical_activity" value="4" min="0" max="10" />
+        </div>
+        <div class="field">
+          <label>Fruit & Veg Intake (0–10)</label>
+          <input type="number" id="fruit_veg_intake" value="5" min="0" max="10" />
+        </div>
+        <div class="field">
+          <label>Red Meat Diet (0–10)</label>
+          <input type="number" id="diet_red_meat" value="6" min="0" max="10" />
+        </div>
+        <div class="field">
+          <label>Salted/Processed Diet (0–10)</label>
+          <input type="number" id="diet_salted_processed" value="4" min="0" max="10" />
+        </div>
+        <div class="field">
+          <label>Air Pollution (0–10)</label>
+          <input type="number" id="air_pollution" value="8" min="0" max="10" />
+        </div>
+        <div class="field">
+          <label>Occupational Hazards (0–10)</label>
+          <input type="number" id="occupational_hazards" value="3" min="0" max="10" />
+        </div>
+        <div class="field">
+          <label>Obesity Score (0–10)</label>
+          <input type="number" id="obesity" value="6" min="0" max="10" />
+        </div>
+        <div class="field">
+          <label>Family History</label>
+          <select id="family_history">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>BRCA Mutation</label>
+          <select id="brca_mutation">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>H. Pylori Infection</label>
+          <select id="h_pylori_infection">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Calcium Intake (0–10)</label>
+          <input type="number" id="calcium_intake" value="5" min="0" max="10" />
+        </div>
+        <div class="field">
+          <label>Physical Activity Level (0–10)</label>
+          <input type="number" id="physical_activity_level" value="4" min="0" max="10" />
+        </div>
+        <div class="field">
+          <label>Overall Risk Score (0–1)</label>
+          <input type="number" id="overall_risk_score" value="0.52" step="0.01" min="0" max="1" />
+        </div>
+        <div class="field">
+          <label>Risk Level</label>
+          <select id="risk_level_encoded">
+            <option value="0">Low</option>
+            <option value="1" selected>Medium</option>
+            <option value="2">High</option>
+          </select>
+        </div>
+
+      </div>
+      <button class="btn-predict" id="btn-predict" onclick="predict()">Run Prediction</button>
+    </div>
+
+    <div class="result-box" id="result-box">
+      <div class="result-header">
+        <div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.25rem">Predicted Cancer Type</div>
+          <div class="cancer-label" id="result-label">—</div>
+        </div>
+        <div class="confidence">Confidence: <strong id="result-conf">—</strong></div>
+      </div>
+      <div class="prob-bars" id="prob-bars"></div>
+    </div>
+  </div>
+
+  <!-- EDA TAB -->
+  <div id="tab-eda" class="tab-content">
+    <p class="section-title">Exploratory Analysis — powered by SQL queries on SQLite</p>
+    <div class="grid-2" style="margin-bottom:1.5rem">
+      <div class="card">
+        <h3>Cancer Type Distribution</h3>
+        <div class="chart-wrap"><canvas id="dist-chart"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Age Group Distribution</h3>
+        <div class="chart-wrap"><canvas id="age-chart"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Average Risk Scores by Cancer Type (SQL GROUP BY)</h3>
+      <div class="chart-wrap"><canvas id="risk-chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- MODEL TAB -->
+  <div id="tab-model" class="tab-content">
+    <p class="section-title">Model Evaluation Metrics</p>
+    <div class="grid-3" style="margin-bottom:1.5rem" id="metrics-grid">
+      <div class="loading">Loading…</div>
+    </div>
+    <div class="card" style="margin-bottom:1.5rem">
+      <h3>Confusion Matrix</h3>
+      <div id="cm-container" class="loading">Loading…</div>
+    </div>
+    <div class="card">
+      <h3>Per-Class Metrics</h3>
+      <div id="per-class-table" class="loading">Loading…</div>
+    </div>
+  </div>
+
+  <!-- DATA TAB -->
+  <div id="tab-data" class="tab-content">
+    <p class="section-title">Cleaned Dataset — output of SQL pipeline (first 20 rows)</p>
+    <div class="card">
+      <div id="data-table" class="loading">Loading…</div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const API = "http://localhost:8000";
+
+const CANCER_COLORS = {
+  Lung: "#58a6ff",
+  Breast: "#f78166",
+  Colon: "#7ee787",
+  Prostate: "#ffa657",
+  Skin: "#d2a8ff"
+};
+
+function showTab(name, btn) {
+  document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+  document.querySelectorAll("nav button").forEach(el => el.classList.remove("active"));
+  document.getElementById("tab-" + name).classList.add("active");
+  btn.classList.add("active");
+
+  if (name === "eda") loadEDA();
+  if (name === "model") loadModel();
+  if (name === "data") loadData();
+}
+
+async function apiFetch(path) {
+  const res = await fetch(API + path);
+  if (!res.ok) throw new Error("API error " + res.status);
+  return res.json();
+}
+
+async function checkStatus() {
+  try {
+    await apiFetch("/");
+    document.getElementById("status-dot").classList.add("online");
+    document.getElementById("status-text").textContent = "API online";
+  } catch {
+    document.getElementById("status-text").textContent = "API offline";
+  }
+}
+
+async function predict() {
+  const btn = document.getElementById("btn-predict");
+  btn.disabled = true;
+  btn.textContent = "Running…";
+
+  const fields = [
+    "age","gender","bmi","smoking","alcohol_use","physical_activity",
+    "fruit_veg_intake","diet_red_meat","diet_salted_processed","air_pollution",
+    "occupational_hazards","obesity","family_history","brca_mutation",
+    "h_pylori_infection","calcium_intake","physical_activity_level",
+    "overall_risk_score","risk_level_encoded"
+  ];
+
+  const body = {};
+  for (const f of fields) {
+    const val = document.getElementById(f).value;
+    body[f] = parseFloat(val);
+  }
+  // Integer fields
+  ["age","gender","smoking","alcohol_use","physical_activity","fruit_veg_intake",
+   "diet_red_meat","diet_salted_processed","air_pollution","occupational_hazards",
+   "obesity","family_history","brca_mutation","h_pylori_infection","calcium_intake",
+   "physical_activity_level","risk_level_encoded"].forEach(f => { body[f] = parseInt(body[f]); });
+
+  try {
+    const res = await fetch(API + "/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+
+    document.getElementById("result-label").textContent = data.predicted_cancer_type;
+    document.getElementById("result-label").style.color = CANCER_COLORS[data.predicted_cancer_type] || "#e6edf3";
+    document.getElementById("result-conf").textContent = (data.confidence * 100).toFixed(1) + "%";
+
+    const bars = document.getElementById("prob-bars");
+    bars.innerHTML = "";
+    const sorted = Object.entries(data.all_probabilities).sort((a, b) => b[1] - a[1]);
+    for (const [label, prob] of sorted) {
+      const pct = (prob * 100).toFixed(1);
+      bars.innerHTML += `
+        <div class="prob-row">
+          <div class="label">${label}</div>
+          <div class="prob-bar-bg">
+            <div class="prob-bar-fill" style="width:${pct}%;background:${CANCER_COLORS[label] || '#58a6ff'}"></div>
+          </div>
+          <div class="pct">${pct}%</div>
+        </div>`;
+    }
+
+    document.getElementById("result-box").style.display = "block";
+  } catch (e) {
+    alert("Prediction failed. Is the API running?\n" + e.message);
+  }
+
+  btn.disabled = false;
+  btn.textContent = "Run Prediction";
+}
+
+let edaLoaded = false;
+async function loadEDA() {
+  if (edaLoaded) return;
+  edaLoaded = true;
+
+  const [dist, ages, risk] = await Promise.all([
+    apiFetch("/data/distribution"),
+    apiFetch("/data/age-distribution"),
+    apiFetch("/data/risk-by-cancer")
+  ]);
+
+  new Chart(document.getElementById("dist-chart"), {
+    type: "doughnut",
+    data: {
+      labels: dist.map(d => d.cancer_type),
+      datasets: [{ data: dist.map(d => d.count), backgroundColor: dist.map(d => CANCER_COLORS[d.cancer_type]) }]
+    },
+    options: {
+      plugins: { legend: { labels: { color: "#e6edf3" } } },
+      maintainAspectRatio: false
+    }
+  });
+
+  new Chart(document.getElementById("age-chart"), {
+    type: "bar",
+    data: {
+      labels: ages.map(a => a.age_group),
+      datasets: [{ label: "Patients", data: ages.map(a => a.count), backgroundColor: "#58a6ff" }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { x: { ticks: { color: "#8b949e" } }, y: { ticks: { color: "#8b949e" } } },
+      maintainAspectRatio: false
+    }
+  });
+
+  new Chart(document.getElementById("risk-chart"), {
+    type: "bar",
+    data: {
+      labels: risk.map(r => r.cancer_type),
+      datasets: [
+        { label: "Avg Risk Score", data: risk.map(r => r.avg_risk), backgroundColor: risk.map(r => CANCER_COLORS[r.cancer_type]) },
+        { label: "Avg Lifestyle Burden", data: risk.map(r => r.avg_lifestyle_burden), backgroundColor: "rgba(255,255,255,0.15)" }
+      ]
+    },
+    options: {
+      plugins: { legend: { labels: { color: "#e6edf3" } } },
+      scales: { x: { ticks: { color: "#8b949e" } }, y: { ticks: { color: "#8b949e" } } },
+      maintainAspectRatio: false
+    }
+  });
+}
+
+let modelLoaded = false;
+async function loadModel() {
+  if (modelLoaded) return;
+  modelLoaded = true;
+
+  const [info, cm] = await Promise.all([
+    apiFetch("/model/info"),
+    apiFetch("/model/confusion-matrix")
+  ]);
+
+  const metricsGrid = document.getElementById("metrics-grid");
+  metricsGrid.innerHTML = `
+    <div class="card metric-card">
+      <div class="value">${(info.metrics.accuracy * 100).toFixed(1)}%</div>
+      <div class="label">Accuracy</div>
+    </div>
+    <div class="card metric-card">
+      <div class="value">${(info.metrics.f1_weighted * 100).toFixed(1)}%</div>
+      <div class="label">F1 Score (Weighted)</div>
+    </div>
+    <div class="card metric-card">
+      <div class="value">${(info.metrics.roc_auc_ovr * 100).toFixed(1)}%</div>
+      <div class="label">ROC-AUC (OvR)</div>
+    </div>`;
+
+  const matrix = cm.matrix;
+  const classes = cm.class_names;
+  const maxVal = Math.max(...matrix.flat());
+
+  let html = `<div style="overflow-x:auto;margin-top:0.5rem">
+    <table style="min-width:500px">
+      <thead><tr><th>Actual \\ Predicted</th>${classes.map(c => `<th style="color:${CANCER_COLORS[c]}">${c}</th>`).join("")}</tr></thead>
+      <tbody>`;
+
+  for (let i = 0; i < classes.length; i++) {
+    html += `<tr><td style="color:${CANCER_COLORS[classes[i]]};font-weight:600">${classes[i]}</td>`;
+    for (let j = 0; j < classes.length; j++) {
+      const val = matrix[i][j];
+      const intensity = Math.round((val / maxVal) * 80);
+      const bg = i === j ? `rgba(35,134,54,${val / maxVal})` : `rgba(218,54,51,${(val / maxVal) * 0.6})`;
+      html += `<td style="background:${bg};text-align:center;font-weight:${i===j?'700':'400'}">${val}</td>`;
+    }
+    html += `</tr>`;
+  }
+
+  html += `</tbody></table></div>`;
+  document.getElementById("cm-container").innerHTML = html;
+
+  const report = info.metrics?.classification_report || {};
+  let tableHtml = `<table><thead><tr><th>Class</th><th>Precision</th><th>Recall</th><th>F1-Score</th><th>Support</th></tr></thead><tbody>`;
+  for (const cls of classes) {
+    const r = report[cls] || {};
+    tableHtml += `<tr>
+      <td style="color:${CANCER_COLORS[cls]};font-weight:600">${cls}</td>
+      <td>${((r.precision || 0)*100).toFixed(1)}%</td>
+      <td>${((r.recall || 0)*100).toFixed(1)}%</td>
+      <td>${((r["f1-score"] || 0)*100).toFixed(1)}%</td>
+      <td>${r.support || 0}</td>
+    </tr>`;
+  }
+  tableHtml += `</tbody></table>`;
+  document.getElementById("per-class-table").innerHTML = tableHtml;
+}
+
+let dataLoaded = false;
+async function loadData() {
+  if (dataLoaded) return;
+  dataLoaded = true;
+
+  const rows = await apiFetch("/data/cleaned-sample?limit=20");
+  if (!rows.length) { document.getElementById("data-table").textContent = "No data"; return; }
+
+  const cols = Object.keys(rows[0]);
+  let html = `<div style="overflow-x:auto"><table>
+    <thead><tr>${cols.map(c => `<th>${c}</th>`).join("")}</tr></thead>
+    <tbody>`;
+
+  for (const row of rows) {
+    html += `<tr>${cols.map(c => `<td>${row[c] ?? ""}</td>`).join("")}</tr>`;
+  }
+
+  html += `</tbody></table></div>`;
+  document.getElementById("data-table").innerHTML = html;
+}
+
+checkStatus();
+</script>
+</body>
+</html>

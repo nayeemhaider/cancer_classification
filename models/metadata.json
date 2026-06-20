@@ -1,0 +1,131 @@
+{
+  "best_model": "RandomForest",
+  "feature_cols": [
+    "age",
+    "gender",
+    "bmi",
+    "smoking",
+    "alcohol_use",
+    "physical_activity",
+    "fruit_veg_intake",
+    "diet_red_meat",
+    "diet_salted_processed",
+    "air_pollution",
+    "occupational_hazards",
+    "obesity",
+    "family_history",
+    "brca_mutation",
+    "h_pylori_infection",
+    "calcium_intake",
+    "physical_activity_level",
+    "overall_risk_score",
+    "risk_level_encoded",
+    "lifestyle_burden",
+    "protective_score",
+    "env_exposure",
+    "bmi_category",
+    "is_senior"
+  ],
+  "classes": [
+    "Breast",
+    "Colon",
+    "Lung",
+    "Prostate",
+    "Skin"
+  ],
+  "metrics": {
+    "accuracy": 0.765,
+    "f1_weighted": 0.7621,
+    "roc_auc_ovr": 0.9487,
+    "classification_report": {
+      "Breast": {
+        "precision": 0.8045977011494253,
+        "recall": 0.7608695652173914,
+        "f1-score": 0.7821229050279329,
+        "support": 92.0
+      },
+      "Colon": {
+        "precision": 0.7777777777777778,
+        "recall": 0.75,
+        "f1-score": 0.7636363636363637,
+        "support": 84.0
+      },
+      "Lung": {
+        "precision": 0.8067226890756303,
+        "recall": 0.9142857142857143,
+        "f1-score": 0.8571428571428571,
+        "support": 105.0
+      },
+      "Prostate": {
+        "precision": 0.7377049180327869,
+        "recall": 0.7377049180327869,
+        "f1-score": 0.7377049180327869,
+        "support": 61.0
+      },
+      "Skin": {
+        "precision": 0.6153846153846154,
+        "recall": 0.5517241379310345,
+        "f1-score": 0.5818181818181818,
+        "support": 58.0
+      },
+      "accuracy": 0.765,
+      "macro avg": {
+        "precision": 0.7484375402840472,
+        "recall": 0.7429168670933854,
+        "f1-score": 0.7444850451316245,
+        "support": 400.0
+      },
+      "weighted avg": {
+        "precision": 0.7618862797108232,
+        "recall": 0.765,
+        "f1-score": 0.7621155408836974,
+        "support": 400.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        70,
+        10,
+        6,
+        0,
+        6
+      ],
+      [
+        3,
+        63,
+        8,
+        5,
+        5
+      ],
+      [
+        3,
+        3,
+        96,
+        0,
+        3
+      ],
+      [
+        0,
+        3,
+        7,
+        45,
+        6
+      ],
+      [
+        11,
+        2,
+        2,
+        11,
+        32
+      ]
+    ],
+    "class_names": [
+      "Breast",
+      "Colon",
+      "Lung",
+      "Prostate",
+      "Skin"
+    ]
+  },
+  "mlflow_uri": "sqlite:///F:\\Portfolio Project\\cancer_classification\\mlflow.db"
+}

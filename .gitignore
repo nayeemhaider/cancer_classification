@@ -1,0 +1,10 @@
+# following directories will be excluded
+
+data/
+mlflow.db
+mlruns/
+models/
+__pycache__/
+*.pkl
+*.db
+.env

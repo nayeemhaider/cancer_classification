@@ -1,0 +1,6 @@
+,Breast,Colon,Lung,Prostate,Skin
+Breast,64,14,7,0,7
+Colon,4,64,5,5,6
+Lung,3,4,93,1,4
+Prostate,0,3,5,49,4
+Skin,11,2,4,10,31
