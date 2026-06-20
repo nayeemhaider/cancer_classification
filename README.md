@@ -1,4 +1,4 @@
-# Cancer Type Classification — SQL · ML · MLflow · FastAPI
+# Cancer Type Classification Project (Educational purpose only)
 
 End-to-end cancer type classification project. The distinguishing feature is that
 all data cleaning, EDA, and feature engineering are done **entirely in SQL** (SQLite)
@@ -52,7 +52,7 @@ open frontend/index.html
 
 # 6. View MLflow experiments
 mlflow ui
-# → http://localhost:5000
+→ http://localhost:5000
 
 # 7. Run tests
 pytest tests/ -v
@@ -60,15 +60,7 @@ pytest tests/ -v
 
 ---
 
-## The SQL Pipeline — What You're Learning
-
-### Why SQL for data cleaning?
-
-In real projects, data often lives in a database from the start. Cleaning it in SQL
-means the transformations are:
-- **Repeatable** — re-run the SQL anytime
-- **Auditable** — anyone with basic SQL can read what happened
-- **Portable** — swap SQLite for Postgres with minimal changes
+## The SQL Pipeline
 
 ### What each SQL file does
 
@@ -90,7 +82,7 @@ Run these queries manually in any SQLite client to build intuition about the dat
 
 ---
 
-## Algorithm Choice
+## Classifier Choice
 
 Two models are trained and compared:
 
